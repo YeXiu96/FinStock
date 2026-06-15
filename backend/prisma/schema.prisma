@@ -1,0 +1,226 @@
+// ============================================
+// Skema Database Prisma — FinStocks
+// ============================================
+// Definisi lengkap tabel, relasi, dan enum
+// untuk sistem manajemen keuangan & persediaan UMKM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Tabel Pengguna (Owner & Karyawan)
+model Pengguna {
+  id           Int            @id @default(autoincrement())
+  nama         String
+  username     String         @unique
+  password     String
+  role         Role           @default(KARYAWAN)
+  permissions  Json?          // Array of accessible modules like ["/kasir", "/transaksi"]
+  status       StatusAkun     @default(AKTIF)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  transaksi    Transaksi[]
+  logAktivitas LogAktivitas[]
+
+  @@index([role])
+  @@index([status])
+}
+
+// Tabel Menu/Item yang dijual
+model Menu {
+  id            Int             @id @default(autoincrement())
+  nama          String
+  kategori      KategoriMenu
+  harga         Decimal         @db.Decimal(10, 2)
+  isAvailable   Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  itemTransaksi ItemTransaksi[]
+
+  @@index([kategori])
+}
+
+// Tabel Transaksi Penjualan
+model Transaksi {
+  id            Int              @id @default(autoincrement())
+  kodeTransaksi String           @unique // format: #T-XXXX
+  waktu         DateTime         @default(now())
+  kasir         Pengguna         @relation(fields: [kasirId], references: [id])
+  kasirId       Int
+  total         Decimal          @db.Decimal(10, 2)
+  metode        MetodeBayar
+  status        StatusTransaksi  @default(SELESAI)
+  catatan       String?
+  namaPelanggan String?
+  items         ItemTransaksi[]
+
+  @@index([waktu])
+  @@index([kasirId])
+  @@index([status])
+  @@index([metode])
+}
+
+// Tabel Detail Item per Transaksi
+model ItemTransaksi {
+  id          Int       @id @default(autoincrement())
+  transaksi   Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+  transaksiId Int
+  menu        Menu      @relation(fields: [menuId], references: [id])
+  menuId      Int
+  qty         Int
+  hargaSatuan Decimal   @db.Decimal(10, 2)
+  subtotal    Decimal   @db.Decimal(10, 2)
+
+  @@index([transaksiId])
+  @@index([menuId])
+}
+
+// Tabel Bahan Baku / Persediaan
+model Persediaan {
+  id          Int            @id @default(autoincrement())
+  namaBahan   String
+  kategori    KategoriStok
+  stok        Decimal        @db.Decimal(10, 2)
+  satuan      String         // kg, liter, butir, dll
+  stokMinimum Decimal        @db.Decimal(10, 2)
+  hargaSatuan Decimal        @db.Decimal(10, 2) @default(0)
+  status      StatusStok     @default(AMAN)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  riwayatStok RiwayatStok[]
+
+  @@index([status])
+  @@index([kategori])
+}
+
+// Tabel Riwayat Keluar/Masuk Stok
+model RiwayatStok {
+  id           Int        @id @default(autoincrement())
+  persediaan   Persediaan @relation(fields: [persediaanId], references: [id], onDelete: Cascade)
+  persediaanId Int
+  tipe         TipeStok   // MASUK atau KELUAR
+  jumlah       Decimal    @db.Decimal(10, 2)
+  keterangan   String?
+  tanggal      DateTime   @default(now())
+
+  @@index([persediaanId])
+  @@index([tanggal])
+}
+
+// Tabel Pengeluaran Operasional
+model Pengeluaran {
+  id         Int      @id @default(autoincrement())
+  tanggal    DateTime @default(now())
+  keterangan String
+  jumlah     Decimal  @db.Decimal(10, 2)
+  kategori   String
+  vendorId   Int?
+  vendor     Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  buktiUrl   String?
+
+  @@index([tanggal])
+  @@index([kategori])
+  @@index([vendorId])
+}
+
+// Tabel Log Aktivitas Pengguna
+model LogAktivitas {
+  id         Int      @id @default(autoincrement())
+  pengguna   Pengguna @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+  penggunaId Int
+  aksi       String
+  waktu      DateTime @default(now())
+
+  @@index([penggunaId])
+  @@index([waktu])
+}
+
+// Tabel Vendor / Supplier
+model Vendor {
+  id          Int            @id @default(autoincrement())
+  nama        String
+  alamat      String?        @db.Text
+  telepon     String?
+  email       String?
+  catatan     String?        @db.Text
+  status      StatusVendor   @default(AKTIF)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  produk      ProdukVendor[]
+  pengeluaran Pengeluaran[]
+
+  @@index([status])
+}
+
+// Tabel Produk yang dijual Vendor
+model ProdukVendor {
+  id         Int      @id @default(autoincrement())
+  vendor     Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendorId   Int
+  namaProduk String
+  harga      Decimal  @db.Decimal(10, 2)
+  satuan     String
+  keterangan String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([vendorId])
+}
+
+// ======== ENUM ========
+
+enum Role {
+  OWNER
+  KARYAWAN
+}
+
+enum StatusAkun {
+  AKTIF
+  NONAKTIF
+}
+
+enum KategoriMenu {
+  MAKANAN
+  MINUMAN
+  SNACK
+}
+
+enum MetodeBayar {
+  TUNAI
+  QRIS
+  TRANSFER
+}
+
+enum StatusTransaksi {
+  SELESAI
+  PENDING
+  BATAL
+}
+
+enum KategoriStok {
+  BAHAN_POKOK
+  BAHAN_MINUMAN
+  BUMBU
+  MINUMAN
+  LAINNYA
+}
+
+enum StatusStok {
+  AMAN
+  KRITIS
+  HABIS
+}
+
+enum TipeStok {
+  MASUK
+  KELUAR
+}
+
+enum StatusVendor {
+  AKTIF
+  NONAKTIF
+}
