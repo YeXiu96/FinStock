@@ -23,6 +23,67 @@ router.post(
   authController.login
 );
 
+// POST /api/auth/register — Registrasi pengguna baru (publik)
+router.post(
+  '/register',
+  [
+    body('nama').notEmpty().withMessage('Nama wajib diisi'),
+    body('username')
+      .notEmpty().withMessage('Username wajib diisi')
+      .isLength({ min: 3 }).withMessage('Username minimal 3 karakter'),
+    body('password')
+      .notEmpty().withMessage('Password wajib diisi')
+      .isLength({ min: 6 }).withMessage('Password minimal 6 karakter'),
+    body('role').optional().isIn(['OWNER', 'KARYAWAN']).withMessage('Role harus OWNER atau KARYAWAN'),
+  ],
+  authController.register
+);
+
+// POST /api/auth/forgot-password/request — Kirim OTP reset password
+router.post(
+  '/forgot-password/request',
+  [
+    body('username')
+      .notEmpty().withMessage('Username wajib diisi')
+      .isString().withMessage('Username harus berupa teks'),
+    body('currentPassword')
+      .notEmpty().withMessage('Password lama wajib diisi')
+      .isLength({ min: 6 }).withMessage('Password lama minimal 6 karakter'),
+  ],
+  authController.requestForgotPassword
+);
+
+// POST /api/auth/forgot-password/verify — Verifikasi OTP dan ubah password baru
+router.post(
+  '/forgot-password/verify',
+  [
+    body('username')
+      .notEmpty().withMessage('Username wajib diisi')
+      .isString().withMessage('Username harus berupa teks'),
+    body('otp')
+      .notEmpty().withMessage('OTP wajib diisi')
+      .isLength({ min: 6, max: 6 }).withMessage('OTP harus 6 digit'),
+    body('newPassword')
+      .notEmpty().withMessage('Password baru wajib diisi')
+      .isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter'),
+  ],
+  authController.verifyForgotPassword
+);
+
+// POST /api/auth/forgot-password — Legacy compatibility
+router.post(
+  '/forgot-password',
+  [
+    body('username')
+      .notEmpty().withMessage('Username wajib diisi')
+      .isString().withMessage('Username harus berupa teks'),
+    body('newPassword')
+      .notEmpty().withMessage('Password baru wajib diisi')
+      .isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter'),
+  ],
+  authController.forgotPassword
+);
+
 // POST /api/auth/logout — Logout pengguna (perlu auth)
 router.post('/logout', authMiddleware, authController.logout);
 

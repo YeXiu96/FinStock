@@ -29,6 +29,81 @@ const login = async (req, res) => {
 };
 
 /**
+ * POST /api/auth/register
+ * Registrasi pengguna baru
+ */
+const register = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendValidationError(res, errors.array());
+    }
+
+    const result = await authService.register(req.body);
+    return sendSuccess(res, 'Registrasi berhasil', result);
+  } catch (error) {
+    return sendError(res, error.message, error.status || 500, error.code);
+  }
+};
+
+/**
+ * POST /api/auth/forgot-password/request
+ * Mengirim OTP untuk reset password
+ */
+const requestForgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendValidationError(res, errors.array());
+    }
+
+    const { username, currentPassword } = req.body;
+    const result = await authService.requestPasswordReset(username, currentPassword);
+    return sendSuccess(res, 'Kode OTP berhasil dikirim', result);
+  } catch (error) {
+    return sendError(res, error.message, error.status || 500, error.code);
+  }
+};
+
+/**
+ * POST /api/auth/forgot-password/verify
+ * Verifikasi OTP dan ubah password baru
+ */
+const verifyForgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendValidationError(res, errors.array());
+    }
+
+    const { username, otp, newPassword } = req.body;
+    await authService.verifyPasswordReset(username, otp, newPassword);
+    return sendSuccess(res, 'Password berhasil diubah');
+  } catch (error) {
+    return sendError(res, error.message, error.status || 500, error.code);
+  }
+};
+
+/**
+ * POST /api/auth/forgot-password
+ * Reset password berdasarkan username (legacy compatibility)
+ */
+const forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendValidationError(res, errors.array());
+    }
+
+    const { username, newPassword } = req.body;
+    await authService.forgotPassword(username, newPassword);
+    return sendSuccess(res, 'Password berhasil direset');
+  } catch (error) {
+    return sendError(res, error.message, error.status || 500, error.code);
+  }
+};
+
+/**
  * GET /api/auth/me
  * Ambil data pengguna yang sedang login
  */
@@ -55,6 +130,10 @@ const logout = async (req, res) => {
 
 module.exports = {
   login,
+  register,
+  forgotPassword,
+  requestForgotPassword,
+  verifyForgotPassword,
   getMe,
   logout,
 };

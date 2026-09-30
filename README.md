@@ -1,186 +1,262 @@
 # 🍗 FinStocks — Sistem Informasi Manajemen Keuangan & Persediaan
 
-> Aplikasi web untuk UMKM **Mak Tunik** yang mendigitalisasi pencatatan transaksi, monitoring stok bahan baku, dan pembuatan laporan keuangan otomatis.
+> Aplikasi web modern untuk UMKM **Mak Tunik** (Gerai Ayam Bakar) untuk digitalisasi pencatatan transaksi kasir, pemantauan stok bahan baku, manajemen vendor, pengelolaan pengeluaran operasional, dan pembuatan laporan keuangan otomatis.
 
 ---
 
-## 📋 Deskripsi
+## 📋 Deskripsi Proyek
 
-FinStocks adalah Sistem Informasi Manajemen berbasis web yang dirancang khusus untuk UMKM Mak Tunik (gerai ayam bakar). Sistem ini menggantikan pencatatan manual menjadi digital dengan fitur:
+**FinStocks** adalah sistem manajemen terpadu berbasis web yang dirancang khusus untuk meningkatkan efisiensi operasional bisnis kuliner Mak Tunik. Aplikasi ini menyelesaikan masalah pencatatan manual yang rentan kesalahan dengan menyediakan platform digital terpusat yang aman dan mudah digunakan.
 
-- **Dashboard Analitik** — Ringkasan penjualan, stok kritis, menu terlaris
-- **Manajemen Transaksi** — Input POS kasir, riwayat, filter, detail
-- **Monitoring Persediaan** — CRUD bahan baku, restock, riwayat stok, level indikator
-- **Laporan Keuangan** — Pendapatan, pengeluaran, laba bersih per periode + export PDF/Excel
-- **Manajemen Pengguna** — CRUD user dengan role OWNER & KARYAWAN
-- **Role-Based Access Control** — Owner akses penuh, Karyawan hanya transaksi
+### ✨ Fitur Utama
 
----
-
-## 🛠️ Tech Stack
-
-| Layer | Teknologi |
-|---|---|
-| Frontend | React 18 (Vite), Tailwind CSS 3, Zustand, Recharts |
-| Backend | Node.js, Express 5, Prisma ORM 5 |
-| Database | MySQL 8 |
-| Auth | JWT (jsonwebtoken) + bcryptjs |
-| Export | pdfkit (PDF), exceljs (Excel) |
+- **📊 Dashboard Analitik**: Grafik tren penjualan 7 hari terakhir, ringkasan pendapatan & pengeluaran harian, daftar bahan baku dengan status stok kritis, serta daftar menu terlaris.
+- **🛒 POS Kasir (Point of Sales)**: Input transaksi penjualan cepat dengan pilihan menu dinamis, input nama pelanggan, catatan tambahan, dan opsi metode pembayaran (Tunai, QRIS, Transfer).
+- **📦 Manajemen Persediaan & Bahan Baku**: Pemantauan level stok bahan baku secara real-time, pengaturan stok minimum (safety stock), riwayat mutasi stok (masuk/keluar), dan alert status otomatis (Aman/Kritis/Habis).
+- **🤝 Manajemen Vendor & Supplier**: Database vendor yang menyuplai bahan baku beserta katalog harga produk yang ditawarkan untuk memudahkan restock.
+- **💸 Pencatatan Pengeluaran**: Manajemen biaya operasional harian yang terintegrasi dengan vendor (opsional) lengkap dengan fitur unggah bukti kuitansi/transaksi.
+- **📈 Laporan Keuangan Otomatis**: Rekap laba rugi bersih per periode, visualisasi keuangan, serta ekspor laporan ke format **PDF** dan **Excel**.
+- **🔒 Akses Kontrol Berbasis Peran (RBAC)**:
+  - **OWNER**: Akses penuh ke seluruh fitur (Persediaan, Vendor, Pengguna, Pengeluaran, Laporan Keuangan, & Reset Password).
+  - **KARYAWAN**: Akses terbatas hanya untuk modul POS Kasir dan daftar menu.
 
 ---
 
-## 🚀 Cara Menjalankan (Development)
+## 🛠️ Tech Stack & Library Pendukung
 
-### Prasyarat
+### Frontend (Client-side)
+* **Framework**: React 19 (Vite)
+* **Styling**: Tailwind CSS v3
+* **State Management**: Zustand
+* **Icons**: Lucide React
+* **Charts**: Recharts (Visualisasi grafik analitik)
+* **HTTP Client**: Axios
+* **Formatting**: Date-fns (Tanggal)
 
-- Node.js ≥ 20.x
-- MySQL 8.x (running di localhost:3306)
-- npm atau yarn
+### Backend (Server-side)
+* **Platform**: Node.js & Express v5
+* **ORM**: Prisma Client v5 (Database access layer)
+* **Database**: MySQL v8
+* **Authentication**: JSON Web Token (JWT) & Bcryptjs (Hashing password)
+* **Utilities**: Multer (Upload bukti pengeluaran), Morgan (HTTP logger), Express Validator (Validasi input payload)
+* **Export**: PDFKit (Export laporan PDF), ExcelJS (Export laporan Excel)
 
-### 1. Clone Repository
+---
 
+## 🚀 Panduan Memulai (Setup Development)
+
+### 📋 Prasyarat Sistem
+* Node.js v20.x atau versi terbaru
+* MySQL Server berjalan di mesin lokal (Default port: `3306`)
+* Package Manager `npm` (Bawaan Node.js)
+
+### 1. Kloning Repository
 ```bash
 git clone <repo-url>
 cd finstocks
 ```
 
-### 2. Setup Backend
+### 2. Konfigurasi Environment Variables
+Salin file template [.env.example](file:///d:/FInStock/.env.example) di root direktori menjadi file `.env` di masing-masing direktori `backend` dan `frontend` atau gunakan file terpusat:
+- **Backend (.env)**: Lihat template di [backend/.env.example](file:///d:/FInStock/backend/.env.example)
+- **Frontend (.env)**: Lihat template di [frontend/.env.example](file:///d:/FInStock/frontend/.env.example)
 
-```bash
-cd backend
+### 3. Setup Backend & Database
+1. Buka terminal baru dan masuk ke direktori backend:
+   ```bash
+   cd backend
+   ```
+2. Instal semua dependensi Node.js:
+   ```bash
+   npm install
+   ```
+3. Konfigurasikan koneksi database di file `.env` (isi `DATABASE_URL` dengan username & password MySQL lokal Anda). Contoh:
+   ```env
+   DATABASE_URL="mysql://root:password@localhost:3306/finstocks_db"
+   ```
+4. Buat database di MySQL lokal:
+   ```sql
+   CREATE DATABASE finstocks_db;
+   ```
+5. Jalankan migrasi Prisma untuk membuat tabel secara otomatis:
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+6. Masukkan data dummy awal (seeding user, menu, persediaan, vendor):
+   ```bash
+   npm run seed
+   ```
+7. Jalankan server backend dalam mode pengembangan:
+   ```bash
+   npm run dev
+   ```
+   Server backend kini berjalan di [http://localhost:5000](http://localhost:5000).
 
-# Install dependencies
-npm install
-
-# Salin file environment
-cp .env.example .env
-# Edit .env → isi DATABASE_URL, JWT_SECRET
-
-# Buat database MySQL
-# mysql -u root -p -e "CREATE DATABASE finstocks_db;"
-
-# Jalankan migrasi Prisma
-npx prisma migrate dev --name init
-
-# Isi data awal (seed)
-npx prisma db seed
-
-# Jalankan server backend
-npm run dev
-```
-
-Server backend akan berjalan di `http://localhost:5000`
-
-### 3. Setup Frontend
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Salin file environment
-cp .env.example .env
-
-# Jalankan frontend
-npm run dev
-```
-
-Frontend akan berjalan di `http://localhost:5173`
-
-### 4. Akun Default (Seed Data)
-
-| Username | Password | Role |
-|---|---|---|
-| `owner` | `owner123` | OWNER |
-| `karyawan1` | `karyawan123` | KARYAWAN |
-| `karyawan2` | `karyawan123` | KARYAWAN |
+### 4. Setup Frontend
+1. Buka terminal baru dan masuk ke direktori frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instal semua dependensi React:
+   ```bash
+   npm install
+   ```
+3. Jalankan server pengembangan frontend:
+   ```bash
+   npm run dev
+   ```
+   Aplikasi frontend kini berjalan di [http://localhost:5173](http://localhost:5173).
 
 ---
 
-## 📁 Struktur Folder
+## 🔑 Kredensial Akun Default (Hasil Seed)
 
-```
+Setelah menjalankan `npm run seed`, Anda dapat login menggunakan akun berikut:
+
+| Username | Password | Role | Akses Fitur |
+| :--- | :--- | :--- | :--- |
+| `owner` | `owner123` | **OWNER** | Seluruh Sistem (Akses Penuh) |
+| `karyawan1` | `karyawan123` | **KARYAWAN** | POS Kasir & Riwayat Transaksi |
+| `karyawan2` | `karyawan123` | **KARYAWAN** | POS Kasir & Riwayat Transaksi |
+
+---
+
+## 📁 Struktur Folder Proyek
+
+```text
 finstocks/
 ├── backend/
-│   ├── prisma/              # Schema & seed
+│   ├── prisma/
+│   │   ├── [schema.prisma](file:///d:/FInStock/backend/prisma/schema.prisma)   # Definisi skema database & relasi tabel
+│   │   └── [seed.js](file:///d:/FInStock/backend/prisma/seed.js)         # Script memasukkan data awal
 │   ├── src/
-│   │   ├── config/          # Database connection
-│   │   ├── middlewares/      # Auth & Role middleware
-│   │   ├── modules/          # 7 modul (auth, transaksi, persediaan, dll)
-│   │   ├── utils/            # Response helper, JWT helper
-│   │   └── index.js          # Entry point Express
-│   ├── Dockerfile
-│   └── package.json
+│   │   ├── config/        # Koneksi database & konfigurasi pihak ketiga
+│   │   ├── middlewares/   # Auth middleware (JWT verification) & Role validation
+│   │   ├── modules/       # Struktur Modular per Fitur (Controller, Routes, Service)
+│   │   │   ├── auth/
+│   │   │   ├── dashboard/
+│   │   │   ├── laporan/
+│   │   │   ├── menu/
+│   │   │   ├── pengeluaran/
+│   │   │   ├── pengguna/
+│   │   │   ├── persediaan/
+│   │   │   ├── transaksi/
+│   │   │   └── vendor/
+│   │   ├── utils/         # Helper respon API & token generator
+│   │   └── [index.js](file:///d:/FInStock/backend/src/index.js)        # Entry point Express.js
+│   ├── [package.json](file:///d:/FInStock/backend/package.json)
+│   └── Dockerfile
 └── frontend/
     ├── src/
-    │   ├── api/              # Axios instance
-    │   ├── components/       # UI (Button, Card, dll) + Layout (Sidebar, Navbar)
-    │   ├── pages/            # 9 halaman (Login, Dashboard, Transaksi, dll)
-    │   ├── store/            # Zustand auth store
-    │   └── utils/            # Format Rupiah, Format Tanggal
-    ├── vercel.json
-    └── package.json
+    │   ├── api/           # Instance Axios & request helper ke backend
+    │   ├── components/    # Reusable UI components & Layout (Sidebar/Navbar)
+    │   ├── pages/         # Komponen halaman/views utama (Dashboard, POS, Laporan)
+    │   ├── store/         # Manajemen state autentikasi menggunakan Zustand
+    │   └── utils/         # Helper format Rupiah & parsing tanggal
+    ├── [package.json](file:///d:/FInStock/frontend/package.json)
+    └── vercel.json
 ```
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 Dokumentasi API Endpoints
 
-| Method | Endpoint | Deskripsi | Auth |
-|---|---|---|---|
-| POST | `/api/auth/login` | Login | ❌ |
-| GET | `/api/auth/me` | Profil user login | ✅ |
-| POST | `/api/auth/logout` | Logout | ✅ |
-| GET/POST | `/api/transaksi` | List / Buat transaksi | ✅ |
-| GET/PUT/DELETE | `/api/transaksi/:id` | Detail / Update / Hapus | ✅ |
-| PUT | `/api/transaksi/:id/status` | Update status | ✅ OWNER |
-| GET/POST | `/api/persediaan` | List / Tambah bahan | ✅ OWNER |
-| PUT/DELETE | `/api/persediaan/:id` | Edit / Hapus bahan | ✅ OWNER |
-| POST | `/api/persediaan/:id/restock` | Input stok masuk | ✅ OWNER |
-| GET | `/api/persediaan/riwayat` | Riwayat stok | ✅ OWNER |
-| GET/POST | `/api/menu` | List / Tambah menu | ✅ |
-| PUT/DELETE | `/api/menu/:id` | Edit / Hapus menu | ✅ OWNER |
-| GET | `/api/dashboard/summary` | Ringkasan hari ini | ✅ |
-| GET | `/api/dashboard/grafik` | Data grafik 7 hari | ✅ |
-| GET | `/api/dashboard/menu-terlaris` | Top 5 menu | ✅ |
-| GET | `/api/dashboard/stok-kritis` | Peringatan stok | ✅ |
-| GET | `/api/laporan/keuangan` | Data laporan periode | ✅ OWNER |
-| GET | `/api/laporan/export/pdf` | Download PDF | ✅ OWNER |
-| GET | `/api/laporan/export/excel` | Download Excel | ✅ OWNER |
-| GET/POST | `/api/pengguna` | List / Tambah pengguna | ✅ OWNER |
-| PUT/DELETE | `/api/pengguna/:id` | Edit / Hapus pengguna | ✅ OWNER |
-| PUT | `/api/pengguna/:id/reset-password` | Reset password | ✅ OWNER |
+Semua request API menggunakan prefix url `/api` (contoh: `http://localhost:5000/api/auth/login`).
+
+### 🔐 Autentikasi (`/api/auth`)
+- **POST** `/login` — Melakukan login pengguna & mengembalikan token JWT. *(Public)*
+- **GET** `/me` — Mengambil data detail profil pengguna yang sedang login. *(Akses: OWNER, KARYAWAN)*
+- **POST** `/logout` — Menghapus sesi login. *(Akses: OWNER, KARYAWAN)*
+
+### 📊 Dashboard (`/api/dashboard`)
+- **GET** `/summary` — Mengambil ringkasan data harian (Penjualan, Pengeluaran, Stok Kritis). *(Akses: OWNER, KARYAWAN)*
+- **GET** `/grafik` — Mengambil data statistik grafik penjualan 7 hari terakhir. *(Akses: OWNER, KARYAWAN)*
+- **GET** `/menu-terlaris` — Mengambil daftar 5 menu paling laku terjual. *(Akses: OWNER, KARYAWAN)*
+- **GET** `/stok-kritis` — Mengambil daftar bahan baku yang berada di bawah ambang batas stok minimum. *(Akses: OWNER, KARYAWAN)*
+
+### 🛍️ Transaksi (`/api/transaksi`)
+- **GET** `/` — Mengambil daftar semua transaksi penjualan (bisa dengan filter tanggal). *(Akses: OWNER, KARYAWAN)*
+- **POST** `/` — Membuat transaksi penjualan baru (Point of Sales). *(Akses: OWNER, KARYAWAN)*
+- **GET** `/:id` — Mengambil detail spesifik transaksi & item terjual. *(Akses: OWNER, KARYAWAN)*
+- **PUT** `/:id` — Mengubah detail transaksi. *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus data transaksi. *(Akses: OWNER)*
+- **PUT** `/:id/status` — Memperbarui status transaksi (SELESAI/PENDING/BATAL). *(Akses: OWNER)*
+
+### 📦 Persediaan & Bahan Baku (`/api/persediaan`)
+- **GET** `/` — Mengambil semua daftar bahan baku di gudang. *(Akses: OWNER, KARYAWAN)*
+- **POST** `/` — Menambahkan item bahan baku baru. *(Akses: OWNER)*
+- **PUT** `/:id` — Mengubah informasi bahan baku (nama, safety stock, dll). *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus bahan baku dari database. *(Akses: OWNER)*
+- **POST** `/:id/restock` — Menambahkan jumlah stok masuk untuk bahan tertentu. *(Akses: OWNER)*
+- **GET** `/riwayat` — Melihat daftar riwayat mutasi stok masuk/keluar. *(Akses: OWNER)*
+
+### 🥦 Menu Makanan & Minuman (`/api/menu`)
+- **GET** `/` — Mengambil daftar seluruh menu ayam bakar & minuman. *(Akses: OWNER, KARYAWAN)*
+- **POST** `/` — Menambahkan menu jualan baru. *(Akses: OWNER)*
+- **PUT** `/:id` — Mengedit detail menu (nama, harga, kategori, ketersediaan). *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus menu dari katalog jualan. *(Akses: OWNER)*
+
+### 🤝 Manajemen Vendor (`/api/vendor`)
+- **GET** `/` — Mengambil daftar seluruh vendor yang terdaftar. *(Akses: OWNER)*
+- **POST** `/` — Menambahkan data vendor baru. *(Akses: OWNER)*
+- **GET** `/:id` — Melihat detail data vendor beserta daftar produknya. *(Akses: OWNER)*
+- **PUT** `/:id` — Memperbarui data informasi kontak vendor. *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus data vendor. *(Akses: OWNER)*
+- **GET** `/:id/produk` — Mengambil daftar katalog produk yang dipasok oleh vendor. *(Akses: OWNER)*
+- **POST** `/:id/produk` — Menambahkan produk baru ke dalam daftar pasokan vendor. *(Akses: OWNER)*
+- **PUT** `/:id/produk/:produkId` — Mengedit detail produk pasokan vendor (harga, satuan, dll). *(Akses: OWNER)*
+- **DELETE** `/:id/produk/:produkId` — Menghapus produk dari vendor tersebut. *(Akses: OWNER)*
+
+### 💸 Pengeluaran Operasional (`/api/pengeluaran`)
+- **GET** `/` — Mengambil daftar transaksi pengeluaran operasional. *(Akses: OWNER)*
+- **GET** `/summary` — Melihat rekap total pengeluaran. *(Akses: OWNER)*
+- **GET** `/:id` — Mengambil detail pengeluaran tertentu. *(Akses: OWNER)*
+- **POST** `/` — Mencatat pengeluaran baru (mendukung upload berkas/bukti dengan Multer). *(Akses: OWNER)*
+- **PUT** `/:id` — Memperbarui data pengeluaran (termasuk mengganti bukti kuitansi). *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus pencatatan pengeluaran. *(Akses: OWNER)*
+
+### 📈 Laporan Keuangan (`/api/laporan`)
+- **GET** `/keuangan` — Mendapatkan data laba rugi bersih per periode tanggal tertentu. *(Akses: OWNER)*
+- **GET** `/export/pdf` — Mengunduh laporan keuangan dalam format PDF. *(Akses: OWNER)*
+- **GET** `/export/excel` — Mengunduh laporan keuangan dalam format file spreadsheet Excel (.xlsx). *(Akses: OWNER)*
+
+### 👥 Pengaturan Pengguna (`/api/pengguna`)
+- **GET** `/` — Mengambil seluruh daftar pengguna/karyawan yang terdaftar. *(Akses: OWNER)*
+- **POST** `/` — Membuat akun pengguna baru. *(Akses: OWNER)*
+- **PUT** `/:id` — Mengedit nama, role, atau hak akses modul pengguna. *(Akses: OWNER)*
+- **DELETE** `/:id` — Menghapus akun pengguna dari sistem. *(Akses: OWNER)*
+- **PUT** `/:id/reset-password` — Mengganti kata sandi pengguna terpilih. *(Akses: OWNER)*
 
 ---
 
-## 🚢 Deployment
+## 🚢 Panduan Deployment Produksi
 
-### Frontend → Vercel
+### Frontend ke Vercel
+1. Pastikan kode terbaru sudah di-push ke repository GitHub.
+2. Masuk ke [Vercel Console](https://vercel.com) dan impor project Anda.
+3. Atur konfigurasi build sebagai berikut:
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Tambahkan Environment Variable:
+   - `VITE_API_BASE_URL` = (Diisi dengan URL Backend API produksi Anda, contoh: `https://api.finstocks.com/api`)
+5. Klik **Deploy**.
 
-1. Push repo ke GitHub
-2. Import project di [vercel.com](https://vercel.com)
-3. Set **Root Directory** = `frontend`
-4. Set **Build Command** = `npm run build`
-5. Set **Output Directory** = `dist`
-6. Tambahkan Environment Variable: `VITE_API_BASE_URL` = URL backend production
-
-### Backend → Railway / Render
-
-1. Import repo di [railway.app](https://railway.app) atau [render.com](https://render.com)
-2. Set **Root Directory** = `backend`
-3. Tambahkan MySQL add-on (Railway) atau gunakan PlanetScale
-4. Set Environment Variables:
-   - `DATABASE_URL` = MySQL connection string
-   - `JWT_SECRET` = Secret key untuk JWT
+### Backend ke Railway / Render
+1. Daftarkan repository Anda di platform cloud (contoh: [Railway](https://railway.app)).
+2. Atur **Root Directory** ke `backend`.
+3. Gunakan MySQL add-on pada platform (atau database cloud eksternal seperti Aiven/PlanetScale).
+4. Masukkan Environment Variables berikut pada dashboard cloud Anda:
+   - `DATABASE_URL` = Koneksi database MySQL cloud Anda
+   - `JWT_SECRET` = String acak unik untuk enkripsi token keamanan JWT
    - `JWT_EXPIRES_IN` = `8h`
    - `NODE_ENV` = `production`
-   - `FRONTEND_URL` = URL frontend Vercel
-5. Deploy
+   - `FRONTEND_URL` = URL domain frontend Vercel Anda (untuk perizinan CORS)
+5. Simpan dan jalankan deployment.
 
 ---
 
-## 📄 Lisensi
+## 📄 Lisensi & Hak Cipta
 
-Hak Milik UMKM Mak Tunik © 2026
-Dibuat oleh Tim Pengembangan FinStocks — Mata Kuliah MPPL
+* Hak Cipta © 2026 milik **UMKM Mak Tunik**.
+* Dikembangkan oleh **Kelompok 11 — Mata Kuliah MPPL (Manajemen Proyek Perangkat Lunak)**, Universitas Muhammadiyah Malang (UMM).
