@@ -52,6 +52,15 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Rute Utama
 // ============================================
 
+// Root welcome endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'FinStocks Backend API berjalan dengan baik',
+    version: '1.0.0'
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
