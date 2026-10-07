@@ -2,7 +2,15 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
 
-const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  size = 'md',
+  closeOnBackdropClick = false,
+}) => {
   // Prevent scrolling on body when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -26,10 +34,10 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* Backdrop — disable close on outside click by default */}
       <div
         className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={closeOnBackdropClick ? onClose : undefined}
       ></div>
 
       {/* Modal Content */}
