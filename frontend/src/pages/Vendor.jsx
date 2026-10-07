@@ -102,17 +102,34 @@ const Vendor = () => {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (!formData.nama.trim()) {
       toast.error('Nama vendor wajib diisi');
       return;
     }
+    if (formData.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      toast.error('Format email vendor tidak valid');
+      return;
+    }
+    if (formData.telepon?.trim() && formData.telepon.trim().length < 8) {
+      toast.error('Nomor telepon minimal 8 digit');
+      return;
+    }
     setIsSaving(true);
     try {
+      const payload = {
+        ...formData,
+        nama: formData.nama.trim(),
+        email: formData.email?.trim() || null,
+        telepon: formData.telepon?.trim() || null,
+        alamat: formData.alamat?.trim() || null,
+        catatan: formData.catatan?.trim() || null,
+      };
       if (activeModal === 'TAMBAH') {
-        await axiosInstance.post('/vendor', formData);
+        await axiosInstance.post('/vendor', payload);
         toast.success('Vendor berhasil ditambahkan');
       } else if (activeModal === 'EDIT') {
-        await axiosInstance.put(`/vendor/${selectedVendor.id}`, formData);
+        await axiosInstance.put(`/vendor/${selectedVendor.id}`, payload);
         toast.success('Vendor berhasil diperbarui');
       }
       closeModal();

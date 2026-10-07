@@ -23,6 +23,7 @@ const DaftarMenu = () => {
   const [modalMode, setModalMode] = useState('TAMBAH'); // TAMBAH, EDIT
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null, nama: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -79,18 +80,29 @@ const DaftarMenu = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    if (!formData.nama?.trim()) {
+      return toast.error('Nama menu wajib diisi');
+    }
+    if (!formData.harga || Number(formData.harga) <= 0) {
+      return toast.error('Harga menu harus berupa angka lebih dari Rp 0');
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        nama: formData.nama.trim(),
         harga: Number(formData.harga)
       };
 
       if (modalMode === 'TAMBAH') {
         await axiosInstance.post('/menu', payload);
-        toast.success('Menu berhasil ditambahkan');
+        toast.success(`Menu "${payload.nama}" berhasil ditambahkan`);
       } else {
         await axiosInstance.put(`/menu/${selectedMenu.id}`, payload);
-        toast.success('Menu berhasil diperbarui');
+        toast.success(`Menu "${payload.nama}" berhasil diperbarui`);
       }
       
       closeModal();
@@ -98,6 +110,8 @@ const DaftarMenu = () => {
     } catch (error) {
       console.error('Submit error', error);
       toast.error(error.response?.data?.message || 'Terjadi kesalahan saat menyimpan menu');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -108,7 +122,7 @@ const DaftarMenu = () => {
       fetchMenus();
     } catch (error) {
       console.error('Toggle error', error);
-      toast.error('Gagal mengubah status ketersediaan');
+      toast.error(error.response?.data?.message || 'Gagal mengubah status ketersediaan');
     }
   };
 
@@ -118,15 +132,17 @@ const DaftarMenu = () => {
 
   const executeDelete = async () => {
     const { id, nama } = confirmDelete;
-    if (!id) return;
+    if (!id || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await axiosInstance.delete(`/menu/${id}`);
       toast.success(`Menu "${nama}" berhasil dihapus`);
       fetchMenus();
     } catch (error) {
-      toast.error('Gagal menghapus menu');
+      toast.error(error.response?.data?.message || 'Gagal menghapus menu');
       console.error(error);
     } finally {
+      setIsSubmitting(false);
       setConfirmDelete({ isOpen: false, id: null, nama: '' });
     }
   };
@@ -269,8 +285,10 @@ const DaftarMenu = () => {
           />
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={closeModal}>Batal</Button>
-            <Button type="submit">{modalMode === 'TAMBAH' ? 'Simpan Menu' : 'Simpan Perubahan'}</Button>
+            <Button type="button" variant="outline" disabled={isSubmitting} onClick={closeModal}>Batal</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : (modalMode === 'TAMBAH' ? 'Simpan Menu' : 'Simpan Perubahan')}
+            </Button>
           </div>
         </form>
       </Modal>

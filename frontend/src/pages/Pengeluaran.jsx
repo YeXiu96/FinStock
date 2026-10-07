@@ -37,6 +37,7 @@ const Pengeluaran = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('TAMBAH'); // TAMBAH, EDIT
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     keterangan: '',
     jumlah: '',
@@ -136,21 +137,36 @@ const Pengeluaran = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.keterangan || !formData.jumlah) {
-      toast.error('Keterangan dan jumlah wajib diisi');
-      return;
+    if (isSubmitting) return;
+
+    if (!formData.keterangan?.trim()) {
+      return toast.error('Keterangan pengeluaran wajib diisi');
+    }
+    if (!formData.jumlah || Number(formData.jumlah) <= 0) {
+      return toast.error('Jumlah pengeluaran harus berupa angka lebih dari Rp 0');
     }
 
+    if (formData.file) {
+      const allowedExtensions = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+      if (!allowedExtensions.includes(formData.file.type)) {
+        return toast.error('Format berkas bukti harus berupa gambar (JPG, PNG) atau PDF');
+      }
+      if (formData.file.size > 5 * 1024 * 1024) {
+        return toast.error('Ukuran berkas bukti maksimal 5 MB');
+      }
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = new FormData();
-      payload.append('keterangan', formData.keterangan);
+      payload.append('keterangan', formData.keterangan.trim());
       payload.append('jumlah', formData.jumlah);
       payload.append('kategori', formData.kategori);
       payload.append('tanggal', formData.tanggal);
       if (formData.vendorId) {
         payload.append('vendorId', formData.vendorId);
       } else {
-        payload.append('vendorId', 'null'); // Indicate null intentionally if possible
+        payload.append('vendorId', 'null');
       }
       if (formData.file) {
         payload.append('bukti', formData.file);
@@ -168,8 +184,10 @@ const Pengeluaran = () => {
       setIsModalOpen(false);
       fetchData(); // Refresh data
     } catch (error) {
-      toast.error(`Gagal ${modalType === 'TAMBAH' ? 'menambah' : 'memperbarui'} pengeluaran`);
+      toast.error(error.response?.data?.message || `Gagal ${modalType === 'TAMBAH' ? 'menambah' : 'memperbarui'} pengeluaran`);
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -178,15 +196,17 @@ const Pengeluaran = () => {
   };
 
   const executeDelete = async () => {
-    if (!confirmDeleteId) return;
+    if (!confirmDeleteId || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await axiosInstance.delete(`/pengeluaran/${confirmDeleteId}`);
       toast.success('Data pengeluaran berhasil dihapus');
       fetchData(); // Refresh data
     } catch (error) {
-      toast.error('Gagal menghapus pengeluaran');
+      toast.error(error.response?.data?.message || 'Gagal menghapus pengeluaran');
       console.error(error);
     } finally {
+      setIsSubmitting(false);
       setConfirmDeleteId(null);
     }
   };
@@ -512,11 +532,11 @@ const Pengeluaran = () => {
           </div>
 
           <div className="flex gap-3 justify-end pt-4 mt-6 border-t border-neutral-100">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => setIsModalOpen(false)}>
               Batal
             </Button>
-            <Button type="submit">
-              {modalType === 'TAMBAH' ? 'Simpan Pengeluaran' : 'Simpan Perubahan'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : (modalType === 'TAMBAH' ? 'Simpan Pengeluaran' : 'Simpan Perubahan')}
             </Button>
           </div>
         </form>

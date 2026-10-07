@@ -28,6 +28,7 @@ const Persediaan = () => {
   const [activeModal, setActiveModal] = useState(null); // 'UPDATE', 'EDIT', 'TAMBAH'
   const [selectedItem, setSelectedItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State untuk Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,21 +133,27 @@ const Persediaan = () => {
   };
 
   const handleSubmitHapus = async () => {
+    if (isSubmitting || !selectedItem) return;
+    setIsSubmitting(true);
     try {
       await axiosInstance.delete(`/persediaan/${selectedItem.id}`);
-      toast.success('Bahan baku berhasil dihapus');
+      toast.success(`Bahan baku ${selectedItem.namaBahan} berhasil dihapus`);
       fetchBahanBaku();
       fetchRiwayat();
       closeModal();
     } catch (error) {
-      toast.error('Gagal menghapus bahan baku');
+      toast.error(error.response?.data?.message || 'Gagal menghapus bahan baku');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmitUpdate = async () => {
+    if (isSubmitting) return;
     if (!formData.jumlah || Number(formData.jumlah) <= 0) {
       return toast.error("Jumlah tambahan harus lebih dari 0");
     }
+    setIsSubmitting(true);
     try {
       await axiosInstance.post(`/persediaan/${selectedItem.id}/restock`, { jumlah: Number(formData.jumlah) });
       toast.success(`Stok ${selectedItem.namaBahan} berhasil ditambahkan`);
@@ -154,7 +161,9 @@ const Persediaan = () => {
       fetchRiwayat();
       closeModal();
     } catch (error) {
-      toast.error('Gagal mengupdate stok.');
+      toast.error(error.response?.data?.message || 'Gagal mengupdate stok.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -165,14 +174,31 @@ const Persediaan = () => {
       fetchBahanBaku();
       fetchRiwayat();
     } catch (error) {
-      toast.error('Gagal mengupdate stok.');
+      toast.error(error.response?.data?.message || 'Gagal mengupdate stok.');
     }
   };
 
   const handleSubmitEdit = async () => {
+    if (isSubmitting) return;
+    if (!formData.namaBahan?.trim()) {
+      return toast.error('Nama bahan wajib diisi');
+    }
+    if (!formData.satuan?.trim()) {
+      return toast.error('Satuan wajib diisi');
+    }
+    if (Number(formData.stokMinimum) < 0) {
+      return toast.error('Batas minimum stok tidak boleh negatif');
+    }
+    if (Number(formData.hargaSatuan) < 0) {
+      return toast.error('Harga satuan tidak boleh negatif');
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        namaBahan: formData.namaBahan.trim(),
+        satuan: formData.satuan.trim(),
         stok: Number(formData.stok),
         stokMinimum: Number(formData.stokMinimum),
         hargaSatuan: Number(formData.hargaSatuan),
@@ -183,14 +209,36 @@ const Persediaan = () => {
       fetchRiwayat();
       closeModal();
     } catch (error) {
-      toast.error('Gagal menyimpan perubahan');
+      toast.error(error.response?.data?.message || 'Gagal menyimpan perubahan');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmitTambah = async () => {
+    if (isSubmitting) return;
+    if (!formData.namaBahan?.trim()) {
+      return toast.error('Nama bahan wajib diisi');
+    }
+    if (!formData.satuan?.trim()) {
+      return toast.error('Satuan wajib diisi');
+    }
+    if (formData.stok === '' || Number(formData.stok) < 0) {
+      return toast.error('Stok awal tidak boleh bernilai negatif');
+    }
+    if (Number(formData.stokMinimum) < 0) {
+      return toast.error('Batas minimum stok tidak boleh negatif');
+    }
+    if (Number(formData.hargaSatuan) < 0) {
+      return toast.error('Harga satuan tidak boleh negatif');
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        namaBahan: formData.namaBahan.trim(),
+        satuan: formData.satuan.trim(),
         stok: Number(formData.stok),
         stokMinimum: Number(formData.stokMinimum),
         hargaSatuan: Number(formData.hargaSatuan),
@@ -201,7 +249,9 @@ const Persediaan = () => {
       fetchRiwayat();
       closeModal();
     } catch (error) {
-      toast.error('Gagal menambah bahan baku');
+      toast.error(error.response?.data?.message || 'Gagal menambah bahan baku');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -613,8 +663,10 @@ const Persediaan = () => {
         title={`Tambah Stok - ${selectedItem?.namaBahan}`}
         footer={
           <>
-            <Button variant="outline" onClick={closeModal}>Batal</Button>
-            <Button variant="primary" onClick={handleSubmitUpdate}>Simpan Stok</Button>
+            <Button variant="outline" disabled={isSubmitting} onClick={closeModal}>Batal</Button>
+            <Button variant="primary" disabled={isSubmitting} onClick={handleSubmitUpdate}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Stok'}
+            </Button>
           </>
         }
       >
@@ -629,7 +681,7 @@ const Persediaan = () => {
             placeholder="Contoh: 10"
             value={formData.jumlah || ''}
             onChange={(e) => setFormData({...formData, jumlah: e.target.value})}
-            min="0"
+            min="0.01"
             step="0.01"
             required
           />
@@ -644,9 +696,9 @@ const Persediaan = () => {
         size="lg"
         footer={
           <>
-            <Button variant="outline" onClick={closeModal}>Batal</Button>
-            <Button variant="primary" onClick={activeModal === 'EDIT' ? handleSubmitEdit : handleSubmitTambah}>
-              {activeModal === 'EDIT' ? 'Simpan Perubahan' : 'Tambah Barang'}
+            <Button variant="outline" disabled={isSubmitting} onClick={closeModal}>Batal</Button>
+            <Button variant="primary" disabled={isSubmitting} onClick={activeModal === 'EDIT' ? handleSubmitEdit : handleSubmitTambah}>
+              {isSubmitting ? 'Menyimpan...' : (activeModal === 'EDIT' ? 'Simpan Perubahan' : 'Tambah Barang')}
             </Button>
           </>
         }
@@ -680,6 +732,7 @@ const Persediaan = () => {
             onChange={(e) => setFormData({...formData, stok: e.target.value})}
             placeholder="0"
             step="0.01"
+            min="0"
             disabled={activeModal === 'EDIT'} // Stok hanya diedit dari tombol Update
           />
           <Input 
@@ -696,6 +749,7 @@ const Persediaan = () => {
             onChange={(e) => setFormData({...formData, stokMinimum: e.target.value})}
             placeholder="0"
             step="0.01"
+            min="0"
           />
           <Input 
             label="Harga Satuan (Rp)" 
@@ -703,6 +757,7 @@ const Persediaan = () => {
             value={formData.hargaSatuan || ''}
             onChange={(e) => setFormData({...formData, hargaSatuan: e.target.value})}
             placeholder="0"
+            min="0"
           />
         </div>
       </Modal>
@@ -714,12 +769,13 @@ const Persediaan = () => {
         title="Konfirmasi Hapus"
         footer={
           <>
-            <Button variant="outline" onClick={closeModal}>Batal</Button>
+            <Button variant="outline" disabled={isSubmitting} onClick={closeModal}>Batal</Button>
             <button 
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-md text-sm font-medium transition-colors"
               onClick={handleSubmitHapus}
             >
-              Ya, Hapus
+              {isSubmitting ? 'Menghapus...' : 'Ya, Hapus'}
             </button>
           </>
         }
