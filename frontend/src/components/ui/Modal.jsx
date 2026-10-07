@@ -23,6 +23,17 @@ const Modal = ({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const sizes = {
@@ -41,13 +52,19 @@ const Modal = ({
       ></div>
 
       {/* Modal Content */}
-      <div className={`bg-white rounded-xl shadow-xl w-full ${sizes[size]} z-10 flex flex-col max-h-[90vh]`}>
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className={`bg-white rounded-xl shadow-xl w-full ${sizes[size]} z-10 flex flex-col max-h-[90vh]`}
+      >
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-neutral-100">
-          <h2 className="text-xl font-semibold text-neutral-800">{title}</h2>
+          <h2 id="modal-title" className="text-xl font-semibold text-neutral-800">{title}</h2>
           <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 rounded-md hover:bg-neutral-100"
+            aria-label="Tutup dialog"
+            className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 rounded-md hover:bg-neutral-100 cursor-pointer"
           >
             <X size={20} />
           </button>

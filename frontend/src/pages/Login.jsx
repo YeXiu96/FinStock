@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Lock, User, UserPlus } from 'lucide-react';
+import { Lock, User, UserPlus, Eye, EyeOff } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import axiosInstance from '../api/axiosInstance';
 
@@ -11,6 +11,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [nama, setNama] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setAuth, isAuthenticated } = useAuthStore();
@@ -131,12 +133,20 @@ const Login = () => {
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#73777f]"><Lock className="w-4 h-4" /></span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimal 6 karakter"
-                className="w-full text-xs h-10 pl-9 pr-4 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
+                className="w-full text-xs h-10 pl-9 pr-10 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#73777f] hover:text-[#1a3a5c] cursor-pointer"
+                aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -145,12 +155,20 @@ const Login = () => {
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#73777f]"><Lock className="w-4 h-4" /></span>
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ulangi password"
-                className="w-full text-xs h-10 pl-9 pr-4 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
+                className="w-full text-xs h-10 pl-9 pr-10 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#73777f] hover:text-[#1a3a5c] cursor-pointer"
+                aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Lihat konfirmasi password"}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -172,6 +190,7 @@ const Login = () => {
               type="text"
               required
               disabled={isLoading}
+              data-testid="input-username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Masukkan username Anda..."
@@ -183,25 +202,44 @@ const Login = () => {
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wide">
             <label className="text-[#191c1e]">Password</label>
-            <button type="button" onClick={() => navigate('/forgot-password', { state: { username } })} className="text-[#1a3a5c] font-bold cursor-pointer hover:underline">
+            <button 
+              type="button" 
+              data-testid="btn-forgot-password"
+              onClick={() => navigate('/forgot-password', { state: { username } })} 
+              className="text-[#1a3a5c] font-bold cursor-pointer hover:underline"
+            >
               Lupa password?
             </button>
           </div>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#73777f]"><Lock className="w-4 h-4" /></span>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               required
               disabled={isLoading}
+              data-testid="input-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Masukkan password Anda..."
-              className="w-full text-xs h-10 pl-9 pr-4 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
+              className="w-full text-xs h-10 pl-9 pr-10 bg-white border border-[#c3c6cf] rounded-lg focus:border-[#1a3a5c] focus:ring-1 focus:ring-[#1a3a5c] outline-none transition-all placeholder-[#73777f]/50"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#73777f] hover:text-[#1a3a5c] cursor-pointer"
+              aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        <button type="submit" disabled={isLoading} className="w-full mt-2 py-3 px-4 rounded-lg text-xs font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-[#1a3a5c] hover:bg-[#002444] disabled:opacity-50 cursor-pointer">
+        <button 
+          type="submit" 
+          disabled={isLoading} 
+          data-testid="btn-login-submit"
+          className="w-full mt-2 py-3 px-4 rounded-lg text-xs font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-[#1a3a5c] hover:bg-[#002444] disabled:opacity-50 cursor-pointer"
+        >
           <span>{isLoading ? 'Sedang Masuk...' : 'Masuk ke Sistem'}</span>
         </button>
       </form>
