@@ -9,6 +9,7 @@ import RoleGuard from './components/layout/RoleGuard';
 // Pages
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Transaksi from './pages/Transaksi';
 import Kasir from './pages/Kasir';
@@ -28,6 +29,7 @@ function App() {
       {/* Route publik */}
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Route private (butuh auth) — semua route di bawah ini punya DashboardLayout */}
       <Route path="/" element={<PrivateRoute />}>

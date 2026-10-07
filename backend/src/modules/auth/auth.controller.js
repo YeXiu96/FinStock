@@ -76,8 +76,8 @@ const verifyForgotPassword = async (req, res) => {
       return sendValidationError(res, errors.array());
     }
 
-    const { username, otp, newPassword } = req.body;
-    await authService.verifyPasswordReset(username, otp, newPassword);
+    const { username, otp, token, newPassword } = req.body;
+    await authService.verifyPasswordReset({ identifier: username, otp, token, newPassword });
     return sendSuccess(res, 'Password berhasil diubah');
   } catch (error) {
     return sendError(res, error.message, error.status || 500, error.code);

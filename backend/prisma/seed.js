@@ -27,11 +27,13 @@ async function main() {
   const owner = await prisma.pengguna.upsert({
     where: { username: 'owner' },
     update: {
+      email: 'radityaamanta123@gmail.com',
       permissions: ["/", "/transaksi", "/kasir", "/pengeluaran", "/menu", "/persediaan", "/laporan", "/vendor", "/pengguna", "/pengaturan"],
     },
     create: {
       nama: 'Admin Owner',
       username: 'owner',
+      email: 'radityaamanta123@gmail.com',
       password: ownerPassword,
       role: 'OWNER',
       permissions: ["/", "/transaksi", "/kasir", "/pengeluaran", "/menu", "/persediaan", "/laporan", "/vendor", "/pengguna", "/pengaturan"],
@@ -44,11 +46,13 @@ async function main() {
   const karyawan1 = await prisma.pengguna.upsert({
     where: { username: 'karyawan1' },
     update: {
+      email: 'karyawan1@finstocks.com',
       permissions: defaultKaryawanPermissions,
     },
     create: {
       nama: 'Budi Santoso',
       username: 'karyawan1',
+      email: 'karyawan1@finstocks.com',
       password: karyawanPassword,
       role: 'KARYAWAN',
       permissions: defaultKaryawanPermissions,
@@ -59,11 +63,13 @@ async function main() {
   const karyawan2 = await prisma.pengguna.upsert({
     where: { username: 'karyawan2' },
     update: {
+      email: 'karyawan2@finstocks.com',
       permissions: defaultKaryawanPermissions,
     },
     create: {
       nama: 'Sari Sulistyowati',
       username: 'karyawan2',
+      email: 'karyawan2@finstocks.com',
       password: karyawanPassword,
       role: 'KARYAWAN',
       permissions: defaultKaryawanPermissions,

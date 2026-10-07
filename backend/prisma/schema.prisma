@@ -18,6 +18,7 @@ model Pengguna {
   id           Int            @id @default(autoincrement())
   nama         String
   username     String         @unique
+  email        String?        @unique
   password     String
   role         Role           @default(KARYAWAN)
   permissions  Json?          // Array of accessible modules like ["/kasir", "/transaksi"]

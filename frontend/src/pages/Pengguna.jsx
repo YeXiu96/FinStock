@@ -25,6 +25,7 @@ const Pengguna = () => {
   const [formData, setFormData] = useState({
     nama: '',
     username: '',
+    email: '',
     password: '',
     role: 'KARYAWAN',
     status: 'AKTIF',
@@ -63,6 +64,7 @@ const Pengguna = () => {
       setFormData({
         nama: user.nama,
         username: user.username,
+        email: user.email || '',
         role: user.role,
         status: user.status,
         password: '', // Kosongkan password saat edit
@@ -72,6 +74,7 @@ const Pengguna = () => {
       setFormData({
         nama: '',
         username: '',
+        email: '',
         password: '',
         role: 'KARYAWAN',
         status: 'AKTIF',
@@ -258,7 +261,12 @@ const Pengguna = () => {
                     </div>
                     {user.nama}
                   </td>
-                  <td className="py-4 px-6 text-xs text-neutral-500">{user.username}</td>
+                  <td className="py-4 px-6 text-xs text-neutral-500">
+                    <span className="font-semibold text-neutral-700">{user.username}</span>
+                    {user.email && (
+                      <div className="text-[11px] text-neutral-400 font-normal">{user.email}</div>
+                    )}
+                  </td>
                   <td className="py-4 px-6 text-xs">
                     <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold border-none ${
                       user.role === 'OWNER' 
@@ -355,6 +363,13 @@ const Pengguna = () => {
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             required
+          />
+          <Input 
+            label="Email (Untuk Pemulihan Akun / OTP)" 
+            type="email"
+            placeholder="contoh: pengguna@domain.com"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
           {modalType === 'TAMBAH' && (
             <Input 

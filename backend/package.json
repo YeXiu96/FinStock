@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "dev": "nodemon --watch src --watch .env src/index.js",
     "start": "node src/index.js",
+    "postinstall": "prisma generate",
     "seed": "node prisma/seed.js"
   },
   "prisma": {
@@ -30,6 +31,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
+    "nodemailer": "^10.0.15",
     "pdfkit": "^0.18.0"
   },
   "devDependencies": {

@@ -24,6 +24,7 @@ router.post('/', [
   body('nama').notEmpty().withMessage('Nama wajib diisi'),
   body('username').notEmpty().withMessage('Username wajib diisi')
     .isLength({ min: 3 }).withMessage('Username minimal 3 karakter'),
+  body('email').optional({ checkFalsy: true }).isEmail().withMessage('Format email tidak valid'),
   body('password').notEmpty().withMessage('Password wajib diisi')
     .isLength({ min: 6 }).withMessage('Password minimal 6 karakter'),
   body('role').optional().isIn(['OWNER', 'KARYAWAN']).withMessage('Role harus OWNER atau KARYAWAN'),
@@ -33,6 +34,7 @@ router.post('/', [
 router.put('/:id', [
   body('nama').optional().notEmpty().withMessage('Nama tidak boleh kosong'),
   body('username').optional().isLength({ min: 3 }).withMessage('Username minimal 3 karakter'),
+  body('email').optional({ checkFalsy: true }).isEmail().withMessage('Format email tidak valid'),
   body('role').optional().isIn(['OWNER', 'KARYAWAN']).withMessage('Role harus OWNER atau KARYAWAN'),
   body('status').optional().isIn(['AKTIF', 'NONAKTIF']).withMessage('Status harus AKTIF atau NONAKTIF'),
 ], penggunaController.update);

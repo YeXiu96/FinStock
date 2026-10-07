@@ -44,25 +44,22 @@ router.post(
   '/forgot-password/request',
   [
     body('username')
-      .notEmpty().withMessage('Username wajib diisi')
-      .isString().withMessage('Username harus berupa teks'),
+      .notEmpty().withMessage('Username atau email wajib diisi')
+      .isString().withMessage('Username atau email harus berupa teks'),
     body('currentPassword')
-      .notEmpty().withMessage('Password lama wajib diisi')
+      .optional({ checkFalsy: true })
       .isLength({ min: 6 }).withMessage('Password lama minimal 6 karakter'),
   ],
   authController.requestForgotPassword
 );
 
-// POST /api/auth/forgot-password/verify — Verifikasi OTP dan ubah password baru
+// POST /api/auth/forgot-password/verify — Verifikasi OTP/Token dan ubah password baru
 router.post(
   '/forgot-password/verify',
   [
-    body('username')
-      .notEmpty().withMessage('Username wajib diisi')
-      .isString().withMessage('Username harus berupa teks'),
-    body('otp')
-      .notEmpty().withMessage('OTP wajib diisi')
-      .isLength({ min: 6, max: 6 }).withMessage('OTP harus 6 digit'),
+    body('username').optional().isString().withMessage('Username harus berupa teks'),
+    body('otp').optional({ checkFalsy: true }).isLength({ min: 6, max: 6 }).withMessage('OTP harus 6 digit'),
+    body('token').optional({ checkFalsy: true }).isString().withMessage('Token harus berupa string'),
     body('newPassword')
       .notEmpty().withMessage('Password baru wajib diisi')
       .isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter'),

@@ -49,6 +49,16 @@ const create = async (data) => {
     throw { status: 400, message: 'Username sudah digunakan', code: 'USERNAME_EXISTS' };
   }
 
+  // Cek jika email disediakan dan sudah dipakai
+  if (data.email) {
+    const existingEmail = await prisma.pengguna.findUnique({
+      where: { email: data.email },
+    });
+    if (existingEmail) {
+      throw { status: 400, message: 'Email sudah digunakan oleh akun lain', code: 'EMAIL_EXISTS' };
+    }
+  }
+
   // Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
@@ -56,6 +66,7 @@ const create = async (data) => {
     data: {
       nama: data.nama,
       username: data.username,
+      email: data.email || null,
       password: hashedPassword,
       role: data.role || 'KARYAWAN',
       permissions: data.permissions || [],
@@ -85,9 +96,20 @@ const update = async (id, data) => {
     }
   }
 
+  // Jika email diubah, cek unik
+  if (data.email) {
+    const existingEmail = await prisma.pengguna.findFirst({
+      where: { email: data.email, NOT: { id: parseInt(id) } },
+    });
+    if (existingEmail) {
+      throw { status: 400, message: 'Email sudah digunakan oleh akun lain', code: 'EMAIL_EXISTS' };
+    }
+  }
+
   const updateData = {};
   if (data.nama) updateData.nama = data.nama;
   if (data.username) updateData.username = data.username;
+  if (data.email !== undefined) updateData.email = data.email || null;
   if (data.role) updateData.role = data.role;
   if (data.permissions !== undefined) updateData.permissions = data.permissions;
   if (data.status) updateData.status = data.status;

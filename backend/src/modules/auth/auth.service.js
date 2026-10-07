@@ -5,7 +5,9 @@
 
 const prisma = require('../../config/db');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { signToken } = require('../../utils/jwt');
+const { sendResetPasswordEmail, maskEmail } = require('../../utils/mailer');
 
 const resetSessions = new Map();
 
@@ -98,70 +100,146 @@ const register = async (data) => {
 };
 
 /**
- * Minta kode OTP untuk reset password
- * @param {string} username
- * @param {string} currentPassword
- * @returns {object} { otp, message }
+ * Minta link dan kode OTP untuk reset password via email
+ * @param {string} identifier - username atau email
+ * @param {string} currentPassword - password lama (opsional)
+ * @returns {object} { message, maskedEmail, username }
  */
-const requestPasswordReset = async (username, currentPassword = '') => {
-  if (!username) {
-    throw { status: 400, message: 'Username wajib diisi', code: 'MISSING_USERNAME' };
+const requestPasswordReset = async (identifier, currentPassword = '') => {
+  if (!identifier) {
+    throw { status: 400, message: 'Username atau email wajib diisi', code: 'MISSING_IDENTIFIER' };
   }
 
-  const pengguna = await prisma.pengguna.findUnique({ where: { username } });
+  const query = identifier.trim();
+  const pengguna = await prisma.pengguna.findFirst({
+    where: {
+      OR: [
+        { username: query },
+        { email: query },
+      ],
+    },
+  });
+
   if (!pengguna) {
-    throw { status: 404, message: 'Username tidak ditemukan', code: 'USER_NOT_FOUND' };
+    throw { status: 404, message: 'Pengguna dengan username atau email tersebut tidak ditemukan', code: 'USER_NOT_FOUND' };
   }
 
   if (pengguna.status === 'NONAKTIF') {
-    throw { status: 403, message: 'Akun Anda dinonaktifkan, hubungi admin', code: 'ACCOUNT_DISABLED' };
+    throw { status: 403, message: 'Akun Anda dinonaktifkan, silakan hubungi admin', code: 'ACCOUNT_DISABLED' };
   }
 
-  const isPasswordValid = currentPassword ? await bcrypt.compare(currentPassword, pengguna.password) : false;
-  const otp = generateOtp();
+  // Jika password lama disertakan, validasi kecocokan
+  if (currentPassword) {
+    const isPasswordValid = await bcrypt.compare(currentPassword, pengguna.password);
+    if (!isPasswordValid) {
+      throw { status: 400, message: 'Password lama yang dimasukkan tidak sesuai', code: 'INVALID_CURRENT_PASSWORD' };
+    }
+  }
 
-  resetSessions.set(username, {
+  if (!pengguna.email) {
+    throw {
+      status: 400,
+      message: `Akun "${pengguna.username}" belum memiliki email terdaftar. Hubungi Owner untuk reset password.`,
+      code: 'NO_EMAIL_REGISTERED',
+    };
+  }
+
+  const otp = generateOtp();
+  const token = crypto.randomBytes(32).toString('hex');
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendUrl}/reset-password?username=${encodeURIComponent(pengguna.username)}&token=${token}`;
+
+  const sessionData = {
     userId: pengguna.id,
+    username: pengguna.username,
+    email: pengguna.email,
     otp,
-    expiresAt: Date.now() + 10 * 60 * 1000,
+    token,
+    expiresAt: Date.now() + 15 * 60 * 1000, // 15 menit
+  };
+
+  // Simpan session berdasarkan username dan token
+  resetSessions.set(pengguna.username, sessionData);
+  resetSessions.set(`token:${token}`, sessionData);
+
+  // Kirim email ke Gmail penerima dengan tombol link dan kode OTP
+  await sendResetPasswordEmail({
+    to: pengguna.email,
+    name: pengguna.nama,
+    otp,
+    resetLink,
   });
 
+  const masked = maskEmail(pengguna.email);
+
   return {
-    otp,
-    message: isPasswordValid
-      ? 'Kode OTP berhasil dikirim untuk verifikasi reset password.'
-      : 'Password lama tidak sesuai. Kode OTP berhasil dikirim untuk verifikasi keamanan.',
+    username: pengguna.username,
+    email: pengguna.email,
+    maskedEmail: masked,
+    message: `Tautan dan kode reset password telah dikirim ke email ${pengguna.email}. Silakan periksa aplikasi atau web Gmail Anda.`,
+    // Catatan: Kode OTP TIDAK disertakan di response API agar pengguna membukanya langsung di Gmail!
   };
 };
 
 /**
- * Verifikasi OTP dan ubah password baru
- * @param {string} username
- * @param {string} otp
- * @param {string} newPassword
+ * Verifikasi token/OTP dan ubah password baru
+ * @param {object} params
+ * @param {string} params.identifier - username atau email (opsional jika token ada)
+ * @param {string} params.otp - kode OTP (opsional jika token ada)
+ * @param {string} params.token - token dari tautan email (opsional jika OTP ada)
+ * @param {string} params.newPassword - password baru
  * @returns {boolean}
  */
-const verifyPasswordReset = async (username, otp, newPassword) => {
-  if (!username || !otp || !newPassword) {
-    throw { status: 400, message: 'Username, OTP, dan password baru wajib diisi', code: 'MISSING_FIELDS' };
-  }
-
-  const session = resetSessions.get(username);
-  if (!session) {
-    throw { status: 400, message: 'Kode OTP belum dibuat atau sudah kedaluwarsa', code: 'OTP_NOT_FOUND' };
-  }
-
-  if (Date.now() > session.expiresAt) {
-    resetSessions.delete(username);
-    throw { status: 400, message: 'Kode OTP sudah kedaluwarsa. Silakan ajukan ulang.', code: 'OTP_EXPIRED' };
-  }
-
-  if (String(session.otp) !== String(otp)) {
-    throw { status: 400, message: 'Kode OTP tidak valid', code: 'INVALID_OTP' };
+const verifyPasswordReset = async ({ identifier = '', otp = '', token = '', newPassword = '' }) => {
+  if (!newPassword) {
+    throw { status: 400, message: 'Password baru wajib diisi', code: 'MISSING_NEW_PASSWORD' };
   }
 
   if (newPassword.length < 6) {
     throw { status: 400, message: 'Password baru minimal 6 karakter', code: 'PASSWORD_TOO_SHORT' };
+  }
+
+  let session = null;
+
+  // Jika verifikasi via link token
+  if (token) {
+    session = resetSessions.get(`token:${token}`);
+    if (!session) {
+      throw { status: 400, message: 'Tautan reset password tidak valid atau sudah kedaluwarsa', code: 'INVALID_TOKEN' };
+    }
+  } else if (identifier && otp) {
+    // Jika verifikasi via kode OTP manual
+    const query = identifier.trim();
+    const pengguna = await prisma.pengguna.findFirst({
+      where: {
+        OR: [
+          { username: query },
+          { email: query },
+        ],
+      },
+    });
+
+    if (!pengguna) {
+      throw { status: 404, message: 'Pengguna tidak ditemukan', code: 'USER_NOT_FOUND' };
+    }
+
+    session = resetSessions.get(pengguna.username);
+    if (!session) {
+      throw { status: 400, message: 'Kode OTP belum diminta atau sudah kedaluwarsa', code: 'OTP_NOT_FOUND' };
+    }
+
+    if (String(session.otp).trim() !== String(otp).trim()) {
+      throw { status: 400, message: 'Kode OTP tidak cocok atau salah', code: 'INVALID_OTP' };
+    }
+  } else {
+    throw { status: 400, message: 'Tautan atau kode OTP verifikasi wajib disertakan', code: 'MISSING_VERIFICATION' };
+  }
+
+  if (Date.now() > session.expiresAt) {
+    if (session.username) resetSessions.delete(session.username);
+    if (session.token) resetSessions.delete(`token:${session.token}`);
+    throw { status: 400, message: 'Sesi reset password sudah kedaluwarsa. Silakan ajukan ulang.', code: 'SESSION_EXPIRED' };
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -170,7 +248,10 @@ const verifyPasswordReset = async (username, otp, newPassword) => {
     data: { password: hashedPassword },
   });
 
-  resetSessions.delete(username);
+  // Bersihkan sesi
+  if (session.username) resetSessions.delete(session.username);
+  if (session.token) resetSessions.delete(`token:${session.token}`);
+
   return true;
 };
 
