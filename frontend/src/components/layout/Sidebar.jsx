@@ -84,7 +84,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   
                   // For KARYAWAN, check permissions
                   if (user.role === 'KARYAWAN') {
-                    return user.permissions && user.permissions.includes(item.path);
+                    const defaultPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+                    const userPermissions = (Array.isArray(user.permissions) && user.permissions.length > 0)
+                      ? user.permissions
+                      : defaultPermissions;
+                    return userPermissions.includes(item.path);
                   }
                   
                   return false;

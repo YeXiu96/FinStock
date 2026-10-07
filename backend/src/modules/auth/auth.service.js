@@ -40,12 +40,27 @@ const login = async (username, password) => {
     throw { status: 401, message: 'Username atau password salah', code: 'INVALID_CREDENTIALS' };
   }
 
+  // Jika role KARYAWAN tetapi permissions kosong/belum diisi, berikan default permissions
+  let userPermissions = pengguna.permissions;
+  const defaultKaryawanPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+  if (pengguna.role === 'KARYAWAN' && (!userPermissions || !Array.isArray(userPermissions) || userPermissions.length === 0)) {
+    userPermissions = defaultKaryawanPermissions;
+    try {
+      await prisma.pengguna.update({
+        where: { id: pengguna.id },
+        data: { permissions: defaultKaryawanPermissions },
+      });
+    } catch (err) {
+      console.warn('Gagal sinkronisasi permissions ke database:', err.message);
+    }
+  }
+
   // Buat JWT token
   const token = signToken({
     id: pengguna.id,
     username: pengguna.username,
     role: pengguna.role,
-    permissions: pengguna.permissions || [],
+    permissions: userPermissions || [],
   });
 
   // Catat log aktivitas login
@@ -58,6 +73,7 @@ const login = async (username, password) => {
 
   // Return data tanpa password
   const { password: _, ...userData } = pengguna;
+  userData.permissions = userPermissions;
   return { token, user: userData };
 };
 
@@ -84,13 +100,16 @@ const register = async (data) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  const defaultKaryawanPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+  const defaultOwnerPermissions = ['/', '/transaksi', '/kasir', '/pengeluaran', '/menu', '/persediaan', '/laporan', '/vendor', '/pengguna', '/pengaturan'];
+
   const pengguna = await prisma.pengguna.create({
     data: {
       nama,
       username,
       password: hashedPassword,
       role,
-      permissions: [],
+      permissions: role === 'OWNER' ? defaultOwnerPermissions : defaultKaryawanPermissions,
       status: 'AKTIF',
     },
   });
@@ -298,8 +317,24 @@ const getMe = async (userId) => {
     throw { status: 404, message: 'Pengguna tidak ditemukan', code: 'USER_NOT_FOUND' };
   }
 
+  // Jika role KARYAWAN tetapi permissions kosong/belum diisi, fallback default
+  let userPermissions = pengguna.permissions;
+  const defaultKaryawanPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+  if (pengguna.role === 'KARYAWAN' && (!userPermissions || !Array.isArray(userPermissions) || userPermissions.length === 0)) {
+    userPermissions = defaultKaryawanPermissions;
+    try {
+      await prisma.pengguna.update({
+        where: { id: pengguna.id },
+        data: { permissions: defaultKaryawanPermissions },
+      });
+    } catch (err) {
+      console.warn('Gagal sinkronisasi permissions ke database:', err.message);
+    }
+  }
+
   // Return tanpa password
   const { password: _, ...userData } = pengguna;
+  userData.permissions = userPermissions;
   return userData;
 };
 

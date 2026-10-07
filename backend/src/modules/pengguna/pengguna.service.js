@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 const getAll = async () => {
   const pengguna = await prisma.pengguna.findMany({
     select: {
-      id: true, nama: true, username: true, role: true,
+      id: true, nama: true, username: true, email: true, role: true,
       permissions: true, status: true, createdAt: true, updatedAt: true,
     },
     orderBy: { createdAt: 'desc' },
@@ -27,7 +27,7 @@ const getById = async (id) => {
   const pengguna = await prisma.pengguna.findUnique({
     where: { id: parseInt(id) },
     select: {
-      id: true, nama: true, username: true, role: true,
+      id: true, nama: true, username: true, email: true, role: true,
       permissions: true, status: true, createdAt: true, updatedAt: true,
     },
   });
@@ -62,14 +62,21 @@ const create = async (data) => {
   // Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
+  const role = data.role || 'KARYAWAN';
+  const defaultKaryawanPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+  const defaultOwnerPermissions = ['/', '/transaksi', '/kasir', '/pengeluaran', '/menu', '/persediaan', '/laporan', '/vendor', '/pengguna', '/pengaturan'];
+  const initialPermissions = (Array.isArray(data.permissions) && data.permissions.length > 0)
+    ? data.permissions
+    : (role === 'OWNER' ? defaultOwnerPermissions : defaultKaryawanPermissions);
+
   const pengguna = await prisma.pengguna.create({
     data: {
       nama: data.nama,
       username: data.username,
       email: data.email || null,
       password: hashedPassword,
-      role: data.role || 'KARYAWAN',
-      permissions: data.permissions || [],
+      role,
+      permissions: initialPermissions,
       status: data.status || 'AKTIF',
     },
   });

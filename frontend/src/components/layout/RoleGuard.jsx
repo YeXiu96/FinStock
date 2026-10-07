@@ -26,7 +26,12 @@ const RoleGuard = ({ allowedRoles, requiredPermission, children }) => {
 
   // If there's a required permission, check it for non-OWNER users
   if (requiredPermission) {
-    if (!user.permissions || !user.permissions.includes(requiredPermission)) {
+    const defaultPermissions = ['/', '/kasir', '/transaksi', '/menu', '/pengaturan'];
+    const userPermissions = (Array.isArray(user.permissions) && user.permissions.length > 0)
+      ? user.permissions
+      : (user.role === 'KARYAWAN' ? defaultPermissions : []);
+
+    if (!userPermissions.includes(requiredPermission)) {
       return <Navigate to="/" replace />;
     }
     return children;

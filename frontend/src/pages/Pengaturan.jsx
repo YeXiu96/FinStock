@@ -32,6 +32,10 @@ const Pengaturan = () => {
                 <p className="font-semibold text-neutral-800 text-sm">@{user?.username}</p>
               </div>
               <div>
+                <p className="text-xs text-neutral-500 mb-1">Email Pemulihan</p>
+                <p className="font-semibold text-neutral-800 text-sm">{user?.email || 'Belum diatur'}</p>
+              </div>
+              <div>
                 <p className="text-xs text-neutral-500 mb-1">Role Akses</p>
                 <p className="font-bold text-[#002444] text-sm">{user?.role}</p>
               </div>

@@ -78,6 +78,7 @@ const Pengguna = () => {
         password: '',
         role: 'KARYAWAN',
         status: 'AKTIF',
+        permissions: ['/', '/kasir', '/transaksi', '/menu', '/pengaturan']
       });
     }
     setIsModalOpen(true);
@@ -386,7 +387,16 @@ const Pengguna = () => {
             <select 
               className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#002444]"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => {
+                const nextRole = e.target.value;
+                setFormData(prev => ({
+                  ...prev,
+                  role: nextRole,
+                  permissions: nextRole === 'KARYAWAN' && (!prev.permissions || prev.permissions.length === 0)
+                    ? ['/', '/kasir', '/transaksi', '/menu', '/pengaturan']
+                    : prev.permissions
+                }));
+              }}
             >
               <option value="KARYAWAN">KARYAWAN / KASIR</option>
               <option value="OWNER">ADMIN / OWNER</option>
