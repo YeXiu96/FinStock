@@ -24,6 +24,7 @@ const DaftarMenu = () => {
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null, nama: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -116,13 +117,21 @@ const DaftarMenu = () => {
   };
 
   const toggleAvailability = async (id, currentStatus) => {
+    if (togglingId) return;
+    setTogglingId(id);
     try {
       await axiosInstance.put(`/menu/${id}`, { isAvailable: !currentStatus });
-      toast.success(`Menu berhasil di-${!currentStatus ? 'aktifkan' : 'nonaktifkan'}`);
+      toast.success(`Menu berhasil di-${!currentStatus ? 'aktifkan' : 'nonaktifkan'}`, {
+        id: `menu-toggle-${id}`,
+      });
       fetchMenus();
     } catch (error) {
       console.error('Toggle error', error);
-      toast.error(error.response?.data?.message || 'Gagal mengubah status ketersediaan');
+      toast.error(error.response?.data?.message || 'Gagal mengubah status ketersediaan', {
+        id: `menu-toggle-${id}`,
+      });
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -202,12 +211,17 @@ const DaftarMenu = () => {
                     <td className="py-3 px-6 text-right">
                       <div className="flex justify-end gap-3">
                         <button 
+                          disabled={togglingId === menu.id}
                           onClick={() => toggleAvailability(menu.id, menu.isAvailable !== false)}
-                          className={`text-[10px] font-medium flex items-center gap-1 px-3 py-1.5 rounded border transition-colors ${menu.isAvailable !== false ? 'text-red-600 hover:text-white hover:bg-red-500 border-red-500' : 'text-green-600 hover:text-white hover:bg-green-500 border-green-500'}`}
+                          className={`text-[10px] font-medium flex items-center gap-1 px-3 py-1.5 rounded border transition-colors ${
+                            togglingId === menu.id
+                              ? 'opacity-50 cursor-not-allowed border-neutral-300 text-neutral-400'
+                              : (menu.isAvailable !== false ? 'text-red-600 hover:text-white hover:bg-red-500 border-red-500' : 'text-green-600 hover:text-white hover:bg-green-500 border-green-500')
+                          }`}
                           title={menu.isAvailable !== false ? 'Tandai Kosong' : 'Tandai Tersedia'}
                         >
-                          <Power size={12} />
-                          {menu.isAvailable !== false ? 'Disable' : 'Enable'}
+                          <Power size={12} className={togglingId === menu.id ? 'animate-spin' : ''} />
+                          {togglingId === menu.id ? 'Memproses...' : (menu.isAvailable !== false ? 'Disable' : 'Enable')}
                         </button>
                         <button 
                           onClick={() => openModal('EDIT', menu)}

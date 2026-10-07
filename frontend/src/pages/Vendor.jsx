@@ -142,6 +142,7 @@ const Vendor = () => {
   };
 
   const handleDelete = async () => {
+    if (isSaving) return;
     setIsSaving(true);
     try {
       await axiosInstance.delete(`/vendor/${selectedVendor.id}`);

@@ -29,6 +29,7 @@ const Persediaan = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restockingId, setRestockingId] = useState(null);
 
   // State untuk Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,13 +169,22 @@ const Persediaan = () => {
   };
 
   const handleQuickRestock = async (item, amount) => {
+    const opKey = `${item.id}-${amount}`;
+    if (restockingId) return;
+    setRestockingId(opKey);
     try {
       await axiosInstance.post(`/persediaan/${item.id}/restock`, { jumlah: Number(amount) });
-      toast.success(`Stok ${item.namaBahan} berhasil ditambahkan +${amount}`);
+      toast.success(`Stok ${item.namaBahan} berhasil ditambahkan +${amount}`, {
+        id: `quick-restock-${item.id}`,
+      });
       fetchBahanBaku();
       fetchRiwayat();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Gagal mengupdate stok.');
+      toast.error(error.response?.data?.message || 'Gagal mengupdate stok.', {
+        id: `quick-restock-${item.id}`,
+      });
+    } finally {
+      setRestockingId(null);
     }
   };
 
@@ -607,16 +617,22 @@ const Persediaan = () => {
                     <td className="py-3 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
+                          disabled={restockingId === `${item.id}-10`}
                           onClick={() => handleQuickRestock(item, 10)}
-                          className="px-2.5 py-1 bg-[#edeef0] text-[#002444] rounded hover:bg-[#c3c6cf]/50 font-bold text-[11px] border border-[#c3c6cf]/50 transition-colors"
+                          className={`px-2.5 py-1 bg-[#edeef0] text-[#002444] rounded hover:bg-[#c3c6cf]/50 font-bold text-[11px] border border-[#c3c6cf]/50 transition-colors ${
+                            restockingId === `${item.id}-10` ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         >
-                          +10
+                          {restockingId === `${item.id}-10` ? '...' : '+10'}
                         </button>
                         <button
+                          disabled={restockingId === `${item.id}-50`}
                           onClick={() => handleQuickRestock(item, 50)}
-                          className="px-2.5 py-1 bg-[#002444] text-white rounded hover:bg-[#1a3a5c] font-bold text-[11px] transition-colors"
+                          className={`px-2.5 py-1 bg-[#002444] text-white rounded hover:bg-[#1a3a5c] font-bold text-[11px] transition-colors ${
+                            restockingId === `${item.id}-50` ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         >
-                          +50
+                          {restockingId === `${item.id}-50` ? '...' : '+50'}
                         </button>
                       </div>
                     </td>

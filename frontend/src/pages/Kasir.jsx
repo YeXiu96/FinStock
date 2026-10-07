@@ -116,6 +116,7 @@ const Kasir = () => {
   };
 
   const handleSubmit = async (shouldPrint = false) => {
+    if (isSubmitting) return;
     if (cart.length === 0) {
       toast.error('Belum ada menu yang dipilih');
       return;
